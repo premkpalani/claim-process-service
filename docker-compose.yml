@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: claim_db
+    environment:
+      POSTGRES_USER: claimuser
+      POSTGRES_PASSWORD: claimpass
+      POSTGRES_DB: claimdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U claimuser -d claimdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - claim_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: claim_process
+    environment:
+      - DATABASE_URL=postgresql://claimuser:claimpass@db:5432/claimdb
+      - USE_POSTGRES=true
+      - DEBUG=false
+      - ENVIRONMENT=production
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - claim_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  claim_network:
+    driver: bridge
