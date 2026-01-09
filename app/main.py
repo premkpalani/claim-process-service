@@ -106,6 +106,8 @@ async def create_claim(
         claim = service.process_claim(claim_data)
         return claim
 
+    except HTTPException:
+        raise
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

@@ -101,7 +101,7 @@ class TestClaimEndpoints:
                     "subscriber_number": "3730189502",
                     "provider_npi": "1497775530",
                     "provider_fees": 100.00,
-                    "allowed_fees": 100.00",
+                    "allowed_fees": 100.00,
                     "member_coinsurance": 0.00,
                     "member_copay": 0.00,
                 }

@@ -87,8 +87,9 @@ class ClaimService:
             claim.total_net_fee = total_net_fee
             claim.status = "processed"
 
-            # Commit to database
-            self.session.commit()
+            # Flush to get updated claim data
+            # Note: FastAPI's get_session dependency will handle the final commit
+            self.session.flush()
             self.session.refresh(claim)
 
             logger.info(
@@ -104,7 +105,7 @@ class ClaimService:
 
         except Exception as e:
             logger.error(f"Error processing claim: {str(e)}")
-            self.session.rollback()
+            # Note: FastAPI's get_session dependency will handle rollback
             raise
 
     def _send_to_payment_service(self, claim: Claim):
@@ -137,7 +138,8 @@ class ClaimService:
             )
             # Mark claim for retry (handled by background worker)
             claim.status = "payment_pending"
-            self.session.commit()
+            # Note: Status change will be committed by the parent transaction
+            # Don't commit here as it could interfere with the main transaction
 
     def get_top_providers_by_net_fees(
         self, limit: int = 10

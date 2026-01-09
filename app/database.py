@@ -39,12 +39,24 @@ def get_session() -> Generator[Session, None, None]:
     """
     Database session dependency for FastAPI.
     Ensures proper session management and cleanup.
+
+    This implements the Unit of Work pattern:
+    - Session is created at request start
+    - All operations share the same session
+    - Commit happens only if request succeeds
+    - Rollback happens on any exception
+    - Session is always closed (via context manager)
     """
-    with Session(engine) as session:
-        try:
-            yield session
-            session.commit()
-        except Exception as e:
-            logger.error(f"Database session error: {str(e)}")
-            session.rollback()
-            raise
+    session = Session(engine)
+    try:
+        yield session
+        # Commit only if no exception occurred
+        session.commit()
+    except Exception as e:
+        logger.error(f"Database session error: {str(e)}")
+        # Rollback on any exception
+        session.rollback()
+        raise
+    finally:
+        # Always close the session to return connection to pool
+        session.close()
