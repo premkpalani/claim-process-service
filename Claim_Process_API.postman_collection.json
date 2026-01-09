@@ -1,0 +1,621 @@
+{
+	"info": {
+		"_postman_id": "claim-process-api-2026",
+		"name": "Claim Process API",
+		"description": "Complete API collection for testing the healthcare claim processing service.\n\nThis collection includes:\n- Health check endpoints\n- Claim creation and retrieval\n- Top providers analytics\n- Rate limiting verification\n- Error handling scenarios\n\nAll requests include test assertions to verify correct behavior.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health & Info",
+			"item": [
+				{
+					"name": "Root Endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has correct structure\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('name');",
+									"    pm.expect(jsonData).to.have.property('version');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});",
+									"",
+									"pm.test(\"Service is running\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('running');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Get basic service information including name, version, and status."
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Service is healthy\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('healthy');",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Check if the service is healthy and responding."
+					},
+					"response": []
+				}
+			],
+			"description": "Basic health and information endpoints"
+		},
+		{
+			"name": "Claims",
+			"item": [
+				{
+					"name": "Create Claim - Valid Single Line",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Claim created successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('claim_reference');",
+									"    pm.expect(jsonData.claim_reference).to.eql('CLAIM-001');",
+									"});",
+									"",
+									"pm.test(\"Claim has correct status\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('processed');",
+									"});",
+									"",
+									"pm.test(\"Net fee calculated correctly\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.total_net_fee).to.eql('0.00');",
+									"});",
+									"",
+									"// Save claim ID for later use",
+									"pm.collectionVariables.set(\"claim_id\", pm.response.json().id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"claim_reference\": \"CLAIM-001\",\n  \"lines\": [\n    {\n      \"service_date\": \"2018-03-28\",\n      \"submitted_procedure\": \"D0180\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"1497775530\",\n      \"provider_fees\": 100.00,\n      \"allowed_fees\": 100.00,\n      \"member_coinsurance\": 0.00,\n      \"member_copay\": 0.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/claims",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims"
+							]
+						},
+						"description": "Create a valid claim with a single line item. Net fee should be: 100 + 0 + 0 - 100 = 0"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Claim - Multiple Lines",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Multi-line claim created\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.claim_reference).to.eql('CLAIM-002');",
+									"    pm.expect(jsonData.lines).to.have.lengthOf(3);",
+									"});",
+									"",
+									"pm.test(\"Total net fee is sum of all lines\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    // Line 1: 100 + 20 + 10 - 100 = 30",
+									"    // Line 2: 150 + 30 + 15 - 150 = 45",
+									"    // Line 3: 200 + 40 + 20 - 200 = 60",
+									"    // Total: 135",
+									"    pm.expect(parseFloat(jsonData.total_net_fee)).to.eql(135.00);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"claim_reference\": \"CLAIM-002\",\n  \"lines\": [\n    {\n      \"service_date\": \"2018-03-28\",\n      \"submitted_procedure\": \"D0180\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"1497775530\",\n      \"provider_fees\": 100.00,\n      \"allowed_fees\": 100.00,\n      \"member_coinsurance\": 20.00,\n      \"member_copay\": 10.00\n    },\n    {\n      \"service_date\": \"2018-03-28\",\n      \"submitted_procedure\": \"D0220\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"1497775530\",\n      \"provider_fees\": 150.00,\n      \"allowed_fees\": 150.00,\n      \"member_coinsurance\": 30.00,\n      \"member_copay\": 15.00\n    },\n    {\n      \"service_date\": \"2018-03-29\",\n      \"submitted_procedure\": \"D0330\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"1234567890\",\n      \"provider_fees\": 200.00,\n      \"allowed_fees\": 200.00,\n      \"member_coinsurance\": 40.00,\n      \"member_copay\": 20.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/claims",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims"
+							]
+						},
+						"description": "Create a claim with multiple line items to test aggregation."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Claim - Invalid Procedure Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message mentions procedure\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(JSON.stringify(jsonData)).to.include('procedure');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"claim_reference\": \"CLAIM-INVALID-PROC\",\n  \"lines\": [\n    {\n      \"service_date\": \"2018-03-28\",\n      \"submitted_procedure\": \"X1234\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"1497775530\",\n      \"provider_fees\": 100.00,\n      \"allowed_fees\": 100.00,\n      \"member_coinsurance\": 0.00,\n      \"member_copay\": 0.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/claims",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims"
+							]
+						},
+						"description": "Attempt to create claim with invalid procedure code (must start with D)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Claim - Invalid NPI",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message mentions NPI\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(JSON.stringify(jsonData).toLowerCase()).to.include('npi');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"claim_reference\": \"CLAIM-INVALID-NPI\",\n  \"lines\": [\n    {\n      \"service_date\": \"2018-03-28\",\n      \"submitted_procedure\": \"D0180\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"123\",\n      \"provider_fees\": 100.00,\n      \"allowed_fees\": 100.00,\n      \"member_coinsurance\": 0.00,\n      \"member_copay\": 0.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/claims",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims"
+							]
+						},
+						"description": "Attempt to create claim with invalid NPI (must be exactly 10 digits)."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Claim - Duplicate Reference",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message mentions duplicate or exists\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var response = JSON.stringify(jsonData).toLowerCase();",
+									"    pm.expect(response).to.satisfy(function(str) {",
+									"        return str.includes('duplicate') || str.includes('exists') || str.includes('already');",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"claim_reference\": \"CLAIM-001\",\n  \"lines\": [\n    {\n      \"service_date\": \"2018-03-28\",\n      \"submitted_procedure\": \"D0180\",\n      \"plan_group\": \"GRP-1000\",\n      \"subscriber_number\": \"3730189502\",\n      \"provider_npi\": \"1497775530\",\n      \"provider_fees\": 100.00,\n      \"allowed_fees\": 100.00,\n      \"member_coinsurance\": 0.00,\n      \"member_copay\": 0.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/claims",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims"
+							]
+						},
+						"description": "Attempt to create claim with duplicate reference (CLAIM-001 was created earlier)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Claim retrieved successfully\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('claim_reference');",
+									"    pm.expect(jsonData).to.have.property('lines');",
+									"});",
+									"",
+									"pm.test(\"Claim has lines\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.lines).to.be.an('array');",
+									"    pm.expect(jsonData.lines.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/claims/{{claim_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims",
+								"{{claim_id}}"
+							]
+						},
+						"description": "Retrieve a claim by its ID (using ID saved from create claim request)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Claim - Not Found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test(\"Error message indicates not found\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(JSON.stringify(jsonData).toLowerCase()).to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/claims/99999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"claims",
+								"99999"
+							]
+						},
+						"description": "Attempt to retrieve a non-existent claim."
+					},
+					"response": []
+				}
+			],
+			"description": "Claim creation and retrieval endpoints"
+		},
+		{
+			"name": "Analytics",
+			"item": [
+				{
+					"name": "Get Top Providers",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Providers are ranked\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.length > 1) {",
+									"        // Verify providers are sorted by net fees descending",
+									"        for (let i = 0; i < jsonData.length - 1; i++) {",
+									"            pm.expect(parseFloat(jsonData[i].total_net_fees)).to.be.at.least(parseFloat(jsonData[i + 1].total_net_fees));",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Provider data is complete\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.length > 0) {",
+									"        pm.expect(jsonData[0]).to.have.property('provider_npi');",
+									"        pm.expect(jsonData[0]).to.have.property('total_net_fees');",
+									"        pm.expect(jsonData[0]).to.have.property('claim_count');",
+									"        pm.expect(jsonData[0]).to.have.property('rank');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/providers/top",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								"top"
+							]
+						},
+						"description": "Get top providers ranked by total net fees (default limit: 10)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Top Providers - With Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Respects limit parameter\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.length).to.be.at.most(5);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/providers/top?limit=5",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								"top"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						},
+						"description": "Get top 5 providers (testing limit parameter)."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Top Providers - Invalid Limit",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Error message mentions limit\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(JSON.stringify(jsonData).toLowerCase()).to.include('limit');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/providers/top?limit=999",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"providers",
+								"top"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "999"
+								}
+							]
+						},
+						"description": "Attempt to get providers with invalid limit (must be between 1 and 100)."
+					},
+					"response": []
+				}
+			],
+			"description": "Analytics and reporting endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000",
+			"type": "string"
+		},
+		{
+			"key": "claim_id",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}
