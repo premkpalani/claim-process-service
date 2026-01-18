@@ -3,6 +3,26 @@
 # Run manually: pre-commit run --all-files
 
 repos:
+  # Build validation: Ensure Python code compiles with no syntax errors
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-ast
+        name: check-python-syntax
+        description: Validates Python files parse as valid Python (no syntax errors)
+
+  # Test validation: Run pytest to ensure all tests pass
+  # Requires: pip install -r requirements.txt (run once after cloning)
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest (all tests must pass)
+        entry: bash scripts/run-tests.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
   # Security: Bandit - finds common security issues in Python code
   - repo: https://github.com/PyCQA/bandit
     rev: 1.7.7

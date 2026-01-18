@@ -437,11 +437,13 @@ The service is instrumented for:
 
 ### Pre-commit Security Hooks
 
-The project includes automated security scanning via pre-commit hooks:
+The project includes automated security scanning and build validation via pre-commit hooks:
 
 ```bash
+# Install dependencies (one-time setup)
+pip install -r requirements.txt
+
 # Install pre-commit hooks (one-time setup)
-pip install pre-commit
 pre-commit install
 
 # Initialize secrets baseline (one-time setup)
@@ -450,6 +452,13 @@ detect-secrets scan > .secrets.baseline
 # Run all security checks manually
 pre-commit run --all-files
 ```
+
+**Build & Test Validation:**
+
+| Check | Purpose |
+|-------|---------|
+| **check-ast** | Validates Python syntax - no code with syntax errors can be committed |
+| **pytest** | Runs all tests - commits blocked if any test fails |
 
 **Security tools included:**
 
@@ -462,6 +471,8 @@ pre-commit run --all-files
 | **Checkov** | IaC security scanner for Dockerfile and docker-compose.yml |
 
 **What gets checked on every commit:**
+- ✅ Python code compiles with no syntax errors
+- ✅ All tests pass (pytest)
 - ✅ No hardcoded secrets or API keys
 - ✅ No known vulnerable dependencies
 - ✅ No common Python security issues (eval, exec, shell injection, etc.)
