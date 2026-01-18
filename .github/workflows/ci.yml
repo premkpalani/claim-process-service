@@ -50,7 +50,7 @@ jobs:
       # Security: Check for vulnerable dependencies
       - name: Check dependencies with Safety
         run: |
-          safety check --file=requirements.txt --full-report || true
+          safety scan --target requirements.txt || true
         continue-on-error: true  # Don't fail on safety warnings
 
       # Code Quality: Run Ruff linter
