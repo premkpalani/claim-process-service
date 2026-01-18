@@ -1,6 +1,6 @@
 from sqlmodel import create_engine, SQLModel, Session
 from sqlalchemy.pool import StaticPool
-from typing import Generator
+from collections.abc import Generator
 import logging
 
 from app.config import settings
@@ -12,12 +12,12 @@ if settings.USE_POSTGRES:
     DATABASE_URL = settings.DATABASE_URL
     connect_args = {}
     poolclass = None
-    logger.info(f"Using PostgreSQL database")
+    logger.info("Using PostgreSQL database")
 else:
     DATABASE_URL = settings.SQLITE_URL
     connect_args = {"check_same_thread": False}
     poolclass = StaticPool
-    logger.info(f"Using SQLite database")
+    logger.info("Using SQLite database")
 
 # Create engine
 engine = create_engine(

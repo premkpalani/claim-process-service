@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List
+from typing import Optional
 from datetime import datetime, date
 from decimal import Decimal
 from pydantic import field_validator, ValidationInfo
@@ -73,7 +73,7 @@ class Claim(ClaimBase, table=True):
     updated_at: Optional[datetime] = Field(default=None)
 
     # Relationship
-    lines: List["ClaimLine"] = Relationship(back_populates="claim")
+    lines: list["ClaimLine"] = Relationship(back_populates="claim")
 
 
 class ClaimLineCreate(ClaimLineBase):
@@ -85,7 +85,7 @@ class ClaimCreate(SQLModel):
     """Schema for creating a claim with multiple lines"""
 
     claim_reference: str = Field(max_length=100)
-    lines: List[ClaimLineCreate]
+    lines: list[ClaimLineCreate]
 
 
 class ClaimResponse(ClaimBase):
@@ -94,7 +94,7 @@ class ClaimResponse(ClaimBase):
     id: int
     total_net_fee: Decimal
     created_at: datetime
-    lines: List[ClaimLine]
+    lines: list[ClaimLine]
 
     class Config:
         from_attributes = True

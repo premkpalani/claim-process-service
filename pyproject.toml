@@ -1,0 +1,48 @@
+[tool.bandit]
+# Bandit security scanner configuration
+# Docs: https://bandit.readthedocs.io/
+
+# Exclude test files from security scanning
+exclude_dirs = ["tests", ".venv", "venv", "__pycache__"]
+
+# Skip specific tests if needed (be careful with this)
+# B104 = hardcoded_bind_all_interfaces - needed for Docker containers
+skips = ["B104"]
+
+# Confidence and severity levels
+# severity: LOW, MEDIUM, HIGH
+# confidence: LOW, MEDIUM, HIGH
+
+[tool.bandit.assert_used]
+# Allow assert in test files
+skips = ["*_test.py", "test_*.py"]
+
+[tool.ruff]
+# Ruff linter configuration
+line-length = 100
+target-version = "py311"
+
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "S",      # flake8-bandit (security)
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG",    # flake8-unused-arguments
+    "SIM",    # flake8-simplify
+]
+
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "S101",   # assert in tests is fine
+    "B008",   # FastAPI uses Depends() in function defaults by design
+    "ARG001", # FastAPI requires `request` arg for rate limiting even if unused
+    "ARG003", # Pydantic validators have required signature with unused args
+    "UP007",  # Optional[X] vs X | None - keep for Python 3.9 compatibility
+]
+
+[tool.ruff.per-file-ignores]
+"tests/*" = ["S101", "ARG"]  # Allow asserts and unused args in tests
+"app/main.py" = ["S104"]  # Allow 0.0.0.0 binding for Docker (only in __main__ block)

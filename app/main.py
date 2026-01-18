@@ -4,7 +4,6 @@ from sqlmodel import Session
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from typing import List
 import logging
 
 from app.config import settings
@@ -109,10 +108,10 @@ async def create_claim(
     except HTTPException:
         raise
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         logger.error(f"Error processing claim: {str(e)}")
-        raise HTTPException(status_code=500, detail="Internal server error")
+        raise HTTPException(status_code=500, detail="Internal server error") from None
 
 
 @app.get("/claims/{claim_id}", response_model=ClaimResponse)
@@ -136,7 +135,7 @@ async def get_claim(
     return claim
 
 
-@app.get("/providers/top", response_model=List[TopProviderResponse])
+@app.get("/providers/top", response_model=list[TopProviderResponse])
 @limiter.limit(f"{settings.RATE_LIMIT_PER_MINUTE}/minute")
 async def get_top_providers(
     request: Request,

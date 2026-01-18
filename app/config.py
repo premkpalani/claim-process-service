@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from typing import List
 
 
 class Settings(BaseSettings):
@@ -25,7 +24,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_STORAGE_URL: str = "memory://"  # Use Redis in production: redis://redis:6379
 
     # CORS
-    CORS_ORIGINS: List[str] = ["*"]
+    CORS_ORIGINS: list[str] = ["*"]
 
     # Logging
     LOG_LEVEL: str = "INFO"

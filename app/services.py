@@ -1,5 +1,5 @@
 from sqlmodel import Session, select, func, desc
-from typing import List, Optional
+from typing import Optional
 from decimal import Decimal
 import logging
 import uuid
@@ -143,7 +143,7 @@ class ClaimService:
 
     def get_top_providers_by_net_fees(
         self, limit: int = 10
-    ) -> List[TopProviderResponse]:
+    ) -> list[TopProviderResponse]:
         """
         Get top N providers by total net fees generated.
 
