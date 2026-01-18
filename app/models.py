@@ -1,4 +1,4 @@
-from __future__ import annotations
+from typing import Optional, List
 
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime, date
@@ -12,7 +12,7 @@ class ClaimLineBase(SQLModel):
 
     service_date: date
     submitted_procedure: str = Field(max_length=50)
-    quadrant: str | None = Field(default=None, max_length=10)
+    quadrant: Optional[str] = Field(default=None, max_length=10)
     plan_group: str = Field(max_length=50)
     subscriber_number: str = Field(max_length=50)
     provider_npi: str = Field(max_length=10)
@@ -47,13 +47,13 @@ class ClaimLine(ClaimLineBase, table=True):
 
     __tablename__ = "claim_lines"
 
-    id: int | None = Field(default=None, primary_key=True)
-    claim_id: int | None = Field(default=None, foreign_key="claims.id")
+    id: Optional[int] = Field(default=None, primary_key=True)
+    claim_id: Optional[int] = Field(default=None, foreign_key="claims.id")
     net_fee: Decimal = Field(decimal_places=2)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationship
-    claim: Claim | None = Relationship(back_populates="lines")
+    claim: Optional["Claim"] = Relationship(back_populates="lines")
 
 
 class ClaimBase(SQLModel):
@@ -68,13 +68,13 @@ class Claim(ClaimBase, table=True):
 
     __tablename__ = "claims"
 
-    id: int | None = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
     total_net_fee: Decimal = Field(default=Decimal("0.00"), decimal_places=2)
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime | None = Field(default=None)
+    updated_at: Optional[datetime] = Field(default=None)
 
     # Relationship
-    lines: list["ClaimLine"] = Relationship(back_populates="claim")
+    lines: List["ClaimLine"] = Relationship(back_populates="claim")
 
 
 class ClaimLineCreate(ClaimLineBase):
@@ -86,7 +86,7 @@ class ClaimCreate(SQLModel):
     """Schema for creating a claim with multiple lines"""
 
     claim_reference: str = Field(max_length=100)
-    lines: list[ClaimLineCreate]
+    lines: List[ClaimLineCreate]
 
 
 class ClaimResponse(ClaimBase):
@@ -95,7 +95,7 @@ class ClaimResponse(ClaimBase):
     id: int
     total_net_fee: Decimal
     created_at: datetime
-    lines: list[ClaimLine]
+    lines: List[ClaimLine]
 
     class Config:
         from_attributes = True

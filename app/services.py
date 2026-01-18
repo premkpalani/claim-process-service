@@ -1,4 +1,4 @@
-from __future__ import annotations
+from typing import Optional, List
 
 from sqlmodel import Session, select, func, desc
 from decimal import Decimal
@@ -144,7 +144,7 @@ class ClaimService:
 
     def get_top_providers_by_net_fees(
         self, limit: int = 10
-    ) -> list[TopProviderResponse]:
+    ) -> List[TopProviderResponse]:
         """
         Get top N providers by total net fees generated.
 
@@ -200,12 +200,12 @@ class ClaimService:
         logger.info(f"Retrieved {len(top_providers)} top providers")
         return top_providers
 
-    def get_claim_by_id(self, claim_id: int) -> Claim | None:
+    def get_claim_by_id(self, claim_id: int) -> Optional[Claim]:
         """Get a claim by ID"""
         statement = select(Claim).where(Claim.id == claim_id)
         return self.session.exec(statement).first()
 
-    def get_claim_by_reference(self, claim_reference: str) -> Claim | None:
+    def get_claim_by_reference(self, claim_reference: str) -> Optional[Claim]:
         """Get a claim by reference"""
         statement = select(Claim).where(Claim.claim_reference == claim_reference)
         return self.session.exec(statement).first()
