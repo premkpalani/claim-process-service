@@ -50,3 +50,14 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+
+  # IaC Security: Checkov - scans Dockerfile, docker-compose, K8s, Terraform
+  - repo: https://github.com/bridgecrewio/checkov
+    rev: 3.1.55
+    hooks:
+      - id: checkov
+        args: [
+          "--framework", "dockerfile,docker_compose",
+          "--quiet",
+          "--compact",
+        ]

@@ -459,6 +459,7 @@ pre-commit run --all-files
 | **Safety** | Checks dependencies against known vulnerability databases |
 | **detect-secrets** | Prevents committing passwords, API keys, and other secrets |
 | **Ruff** | Fast linter with security rules (flake8-bandit) |
+| **Checkov** | IaC security scanner for Dockerfile and docker-compose.yml |
 
 **What gets checked on every commit:**
 - ✅ No hardcoded secrets or API keys
@@ -466,6 +467,8 @@ pre-commit run --all-files
 - ✅ No common Python security issues (eval, exec, shell injection, etc.)
 - ✅ No debug statements left in code
 - ✅ YAML/JSON/TOML files are valid
+- ✅ Dockerfile follows security best practices (non-root user, healthcheck, etc.)
+- ✅ docker-compose.yml has no security misconfigurations
 
 **Production recommendations:**
 - Enable HTTPS/TLS
