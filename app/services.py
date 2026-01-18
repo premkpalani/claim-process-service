@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from sqlmodel import Session, select, func, desc
-from typing import Optional
 from decimal import Decimal
 import logging
 import uuid
@@ -199,12 +200,12 @@ class ClaimService:
         logger.info(f"Retrieved {len(top_providers)} top providers")
         return top_providers
 
-    def get_claim_by_id(self, claim_id: int) -> Optional[Claim]:
+    def get_claim_by_id(self, claim_id: int) -> Claim | None:
         """Get a claim by ID"""
         statement = select(Claim).where(Claim.id == claim_id)
         return self.session.exec(statement).first()
 
-    def get_claim_by_reference(self, claim_reference: str) -> Optional[Claim]:
+    def get_claim_by_reference(self, claim_reference: str) -> Claim | None:
         """Get a claim by reference"""
         statement = select(Claim).where(Claim.claim_reference == claim_reference)
         return self.session.exec(statement).first()
